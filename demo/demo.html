@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>sd-webui-websocket server demo</title>
+	<meta charset="UTF-8">
+</head>
+
+<body>
+	<h1>sd-webui-websocket server demo</h1>
+	<p id="status"></p>
+	<p id="messages"></p>
+	<div>
+		<label for="message">Message:</label>
+		<input type="text" id="message"><br>
+		<button onclick="sendMessage()">Send message</button>
+	</div>
+	<hr>
+	<div>
+		<button onclick="getAllUI()">Get All UI</button>
+	</div>
+	<hr>
+	<div>
+		<label for="query">Query:</label>
+		<input type="text" id="query"><br>
+		<label for="value">Value:</label>
+		<input type="text" id="value"><br>
+		<button onclick="getUI()">Get UI</button>
+		<button onclick="uploadImage()">Upload Image</button>
+		<button onclick="setUI()">Set UI</button>
+	</div>
+	<style>
+		.connected {
+			color: green;
+		}
+
+		.not-connected {
+			color: red;
+		}
+	</style>
+
+	<script>
+		let messages = [];
+		function checkConnection() {
+			fetch('/connected')
+				.then(response => response.json())
+				.then(data => {
+					const status = document.querySelector('#status');
+					if (data.connected) {
+						status.textContent = 'Connected';
+						status.classList.add('connected');
+						status.classList.remove('not-connected');
+					} else {
+						status.textContent = 'Not connected';
+						status.classList.add('not-connected');
+						status.classList.remove('connected');
+					}
+				})
+				.catch(error => console.error(error));
+		}
+
+		function addImages(base64strs){
+			const messagesElement = document.querySelector('#messages');
+			const imageRow = document.createElement('div');
+			for (const imageBase64 of base64strs) {
+				const image = document.createElement('img');
+				image.src = imageBase64;
+				image.style.height = '100px';
+				imageRow.appendChild(image);
+			}
+			messagesElement.appendChild(imageRow);
+		}
+
+		function getMessages() {
+			fetch('/messages?start=' + messages.length)
+				.then(response => response.json())
+				.then(data => {
+					const messagesElement = document.querySelector('#messages');
+					for (const message of data) {
+						messages.push(message);
+						const item = document.createElement('li');
+						const text = JSON.stringify(message);
+						// max 1000 chars
+						if(text.length > 1000){
+							item.textContent = text.substring(0, 1000) + '...';
+						}else{
+							item.textContent = text;
+						}
+						messagesElement.appendChild(item);
+						// image
+						if (message.type === 'postprocess_image') {
+							addImages([message.pp.image]);
+						} else if (message.type === 'postprocess') {
+							addImages(message.processed.images);
+						} else if (message.type === "response_get_ui" && message.status === "success" 
+							&& (message.element.type === 'file' || message.element.type === 'image')){
+							const value = message.element.value;
+							if(Array.isArray(value)){
+								addImages(message.element.value);
+							}else{
+								addImages([message.element.value]);
+							}
+						}
+					}
+				})
+				.catch(error => console.error(error));
+		}
+		setInterval(getMessages, 1000);
+		setInterval(checkConnection, 1000);
+		let fileBase64 = '';
+
+		function sendMessage() {
+			const message = document.querySelector('#message').value;
+			fetch('/messages', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ message, 'type': 'test' })
+			})
+				.then(() => {
+					getMessages();
+					document.querySelector('#message').value = '';
+				})
+				.catch(error => console.error(error));
+		}
+
+		function getAllUI() {
+			fetch('/all_ui')
+				.then(response => response.text())
+				.then(data => {
+
+				})
+				.catch(error => console.error(error));
+		}
+
+		function getUI() {
+			const query = document.querySelector('#query').value;
+			const url = '/ui?' + new URLSearchParams({ query });
+			// GET
+			fetch(url)
+				.then(response => response.text())
+				.then(data => {
+				})
+				.catch(error => console.error(error));
+		}
+
+		function setUI() {
+			const query = document.querySelector('#query').value;
+			let value = document.querySelector('#value').value;
+			if(value === '#base64#'){
+				value = fileBase64;
+			}
+			fetch('/ui', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ query, value })
+			})
+				.then(() => { })
+				.catch(error => console.error(error));
+		}
+
+		function uploadImage() {
+			// let use to choose a file
+			const input = document.createElement('input');
+			input.type = 'file';
+			input.onchange = e => {
+				const file = e.target.files[0];
+				// change file to base64 string
+				const reader = new FileReader();
+				reader.readAsDataURL(file);
+				reader.onload = readerEvent => {
+					const content = readerEvent.target.result;
+					fileBase64 = content;
+					const value = document.querySelector('#value');
+					value.value = "#base64#";
+				}
+			}
+			input.click();
+		}
+		getMessages();
+	</script>
+</body>
+
+</html>

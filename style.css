@@ -1,0 +1,15 @@
+#sd-webui-websocket_txt2img_route_row > .form, #sd-webui-websocket_img2img_route_row > .form{
+    align-items: center;
+}
+#sd-webui-websocket_txt2img_status, #sd-webui-websocket_img2img_status {
+    height: 300px;
+}
+#sd-webui-websocket_txt2img_send_row, #sd-webui-websocket_img2img_send_row, #sd-webui-websocket_txt2img_receive_row, #sd-webui-websocket_img2img_receive_row {
+    display: none;
+}
+#sd-webui-websocket_txt2img_status > .wrap, #sd-webui-websocket_img2img_status > .wrap {
+    height: 90%;
+}
+#sd-webui-websocket_img2img_row {
+    display: none;
+}
