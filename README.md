@@ -6,7 +6,7 @@ This is an extension for [AUTOMATIC1111/stable-diffusion-webui](https://github.c
 
 **Warning:** Make sure that you trust the WebSocket server you are connecting to.
 
-![](README/demo.gif)
+https://github.com/xyqlx/sd-webui-websocket/assets/40012783/a99087ed-617d-4aa3-ab32-34d8df2330d8
 
 ## Installation
 
